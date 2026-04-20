@@ -8,6 +8,7 @@ from Converter import Converter
 import cv2
 import numpy as np
 from robot.robotclasses import Maxi
+from RobotGUI import start_gui
 
 from data_anal import convert_to_hsv, find_objects, search_colors, find_contours
 
@@ -35,6 +36,10 @@ frame_time = time.time()
 
 mode = 0
 
+data_queue = queue.Queue()
+start_gui(data_queue)
+data_queue.put({"belt_speed": belt_speed})
+
 while True:
     """Få belt speed"""
 
@@ -54,6 +59,9 @@ while True:
     #objecter (farve, x-koordinat, tid)
     drawn_hsv_image, new_objects = find_objects(hsv_image)
 
+    # Convert annotated image back to BGR for GUI
+    drawn_bgr = cv2.cvtColor(drawn_hsv_image, cv2.COLOR_HSV2BGR)
+
     #tilføjer nye objekter til den globale liste af objekter og printer dem
     if new_objects:
         objects += new_objects
@@ -61,6 +69,8 @@ while True:
 
 
     #send info til gui
+    data_queue.put({"frame":   drawn_bgr})
+    data_queue.put({"objects": objects})
 
     # tjekker om robotten er klar, hvis den er klar og der er objekter i køen
     # og den ikke allerede har et item, så tager den det første item i køen og 
@@ -75,7 +85,9 @@ while True:
             time_at_bot = item[2] + converter.y_timing(belt_speed)[0]
             item = (item[0], bot_x, time_at_bot)
             print(item)
+
+            data_queue.put({"robot_item": item})
             bot.pickcycle(item)
-            
+            data_queue.put({"robot_item": None})
 
     
