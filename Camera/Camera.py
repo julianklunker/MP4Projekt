@@ -1,21 +1,9 @@
 import cv2
 import os
 import numpy as np
-#from sortingsystem.settings import config
-#from Models.KMeans_model.Color_detection import Color_detection
-#from Models.Thresholdmodel.thresholdmodel import ThresholdModel
-#from Models.Flensburgmodel.Flensburgmodel import Flensburgmodel
-#from Models.Hamburgmodel.Hamburgmodel import Hamburgmodel
-#from Models.Frankfurtmodel.Frankfurtmodel import Frankfurtmodel
-#from Models.Dortmundmodel.Dortmundmodel import Dortmundmodel
-#from Models.Dusseldorfmodel.Dusseldorfmodel import Dusseldorfmodel
-#from Models.Kolnmodel.Kolnmodel import Kolnmodel
 #from Object.Object import Object
 import time 
 import threading
-#import json
-
-#from sortingsystem.settings import config
 
 class Camera(cv2.VideoCapture):
     """

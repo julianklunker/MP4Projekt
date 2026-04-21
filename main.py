@@ -1,12 +1,12 @@
-import threading
+import cv2
 import time
-import tkinter as tk
 import queue
+import tkinter as tk
+import numpy as np
+
 from Camera.image_gen import update_image
 from Camera.Camera import Newteccam
 from Converter import Converter
-import cv2
-import numpy as np
 from robot.robotclasses import Maxi
 from RobotGUI import start_gui
 
@@ -28,13 +28,12 @@ converter.calibrate(0,90,1340,-90)
 
 belt_speed = 200
 ####Manlger at connect til belt arduino og få tal 
-image = np.zeros((1096, 1340,3), dtype=np.uint8)
+
+image = np.zeros((cam.__HEIGHT, cam.WIDTH,3), dtype=np.uint8)
 
 objects = []
 
 frame_time = time.time()
-
-mode = 0
 
 data_queue = queue.Queue()
 start_gui(data_queue)
