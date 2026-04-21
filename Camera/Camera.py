@@ -65,8 +65,14 @@ class Newteccam(Camera):
         self.__CROP_TOP = 1096
         self.__CROP_LEFT = 1117
 
+        self.fps = 30
+        self.exposure = 5429
+
         self.set(cv2.CAP_PROP_FRAME_WIDTH, self.__WIDTH)
         self.set(cv2.CAP_PROP_FRAME_HEIGHT, self.__HEIGHT)
+        self.set(cv2.CAP_PROP_FPS, self.fps)
+        self.set(cv2.CAP_PROP_EXPOSURE, self.exposure)
+
         os.system(f"v4l2-ctl -d {path} --set-crop top={self.__CROP_TOP},left={self.__CROP_LEFT},width={self.__WIDTH},height={self.__HEIGHT}")
 
     def read(self):
