@@ -1,7 +1,5 @@
 import serial
 import time
-import threading
-import re
 
 #Settings
 z_pickup = 80

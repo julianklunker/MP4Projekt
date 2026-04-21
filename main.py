@@ -24,12 +24,12 @@ if bot:
     bot.move(x=0,y=0)
 
 converter = Converter()
-converter.calibrate(0,90,1340,-90)
+converter.calibrate(0,90,cam.__WIDTH,-90)
 
 belt_speed = 200
 ####Manlger at connect til belt arduino og få tal 
 
-image = np.zeros((cam.__HEIGHT, cam.WIDTH,3), dtype=np.uint8)
+image = np.zeros((cam.__HEIGHT, cam.__WIDTH,3), dtype=np.uint8)
 
 objects = []
 
