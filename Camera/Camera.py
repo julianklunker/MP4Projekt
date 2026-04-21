@@ -72,14 +72,20 @@ class Camera(cv2.VideoCapture):
 class Newteccam(Camera):
     def __init__(self, path='/dev/qtec/video0', API=cv2.CAP_V4L2, *args, **kwargs):
         super().__init__(path, API, *args, **kwargs)
-        self.__HEIGHT = 1013
-        self.__WIDTH = 1340
+        self.HEIGHT = 1013
+        self.WIDTH = 1340
         self.__CROP_TOP = 1096
         self.__CROP_LEFT = 1117
 
-        self.set(cv2.CAP_PROP_FRAME_WIDTH, self.__WIDTH)
-        self.set(cv2.CAP_PROP_FRAME_HEIGHT, self.__HEIGHT)
-        os.system(f"v4l2-ctl -d {path} --set-crop top={self.__CROP_TOP},left={self.__CROP_LEFT},width={self.__WIDTH},height={self.__HEIGHT}")
+        self.fps = 30
+        self.exposure = 5429
+
+        self.set(cv2.CAP_PROP_FRAME_WIDTH, self.WIDTH)
+        self.set(cv2.CAP_PROP_FRAME_HEIGHT, self.HEIGHT)
+        self.set(cv2.CAP_PROP_FPS, self.fps)
+        self.set(cv2.CAP_PROP_EXPOSURE, self.exposure)
+
+        os.system(f"v4l2-ctl -d {path} --set-crop top={self.__CROP_TOP},left={self.__CROP_LEFT},width={self.WIDTH},height={self.HEIGHT}")
 
     def read(self):
         self.image = super().read()

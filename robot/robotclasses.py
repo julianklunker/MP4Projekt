@@ -4,43 +4,43 @@ import threading
 import re
 
 #Settings
-z_pickup = 80
+z_pickup = 60
 z_move = 120
 z_drop = 80
-suck_pause_time = 1
+suck_pause_time = 2
 
 #Drop off locations
 item_dropoff_locations = {
     "red":    (180, -170),
     "blue":   (180, -25),
     "green":  (180,  90),
-    "yellow": (180, -130),
-    "orange": (180, -80),
-    "pink":   (180,  50),
-    "white":   (-200, -25),
-    "purple":  (-200, -170),
-    "cyan":    (-200,  90),
+    "yellow": (-200, -170),
+    "orange": (-200, -25),
+    "pink":   (-200,  90),
+    "white":   (180, -130),
+    "purple":  (180, 10),
+    "cyan":    (180,  105),
     "brown":   (-200, -130),
-    "gray":    (-200, -80),
-    "black":   (-200,  50),
+    "gray":    (-200, 10),
+    "black":   (-200,  105),
 }
 
 bot1_dropoff_locations = {
     "red":    (180, -170),
     "blue":   (180, -25),
     "green":  (180,  90),
-    "yellow": (180, -130),
-    "orange": (180, -80),
-    "pink":   (180,  50),
+    "yellow": (-200, -170),
+    "orange": (-200, -25),
+    "pink":   (-200,  90),
 }
 
 bot2_dropoff_locations = {
-    "white":   (-200, -25),
-    "purple":  (-200, -170),
-    "cyan":    (-200,  90),
+    "white":   (180, -130),
+    "purple":  (180, 10),
+    "cyan":    (180,  105),
     "brown":   (-200, -130),
-    "gray":    (-200, -80),
-    "black":   (-200,  50),
+    "gray":    (-200, 10),
+    "black":   (-200,  105),
 }
 
 
@@ -113,15 +113,17 @@ class Maxi(Robot):
 
         self.move(x=x_coord, y=0)  
         self.pump_on()
+        self.pause(1)
         self.move(z=z_pickup)
         self.pause(suck_pause_time)
         self.move(z=z_move)
 
         self.move(x=dropoff_x, y=dropoff_y)
-        self.move(z=z_drop)
+        #self.move(z=z_drop)
 
         self.pump_off()
         self.pause(suck_pause_time)  # Pause so vacuum is released
+        #self.move(z=z_move)
 
     def update(self):
         if time.time() >= self.timenext:
