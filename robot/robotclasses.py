@@ -11,12 +11,38 @@ suck_pause_time = 1
 
 #Drop off locations
 item_dropoff_locations = {
-    "red": (180, -170),
-    "blue": (180, -25),
-    "green": (180, 90),
-    "yellow": (-200, -170),
-    "white": (-200, -25)
+    "red":    (180, -170),
+    "blue":   (180, -25),
+    "green":  (180,  90),
+    "yellow": (180, -130),
+    "orange": (180, -80),
+    "pink":   (180,  50),
+    "white":   (-200, -25),
+    "purple":  (-200, -170),
+    "cyan":    (-200,  90),
+    "brown":   (-200, -130),
+    "gray":    (-200, -80),
+    "black":   (-200,  50),
 }
+
+bot1_dropoff_locations = {
+    "red":    (180, -170),
+    "blue":   (180, -25),
+    "green":  (180,  90),
+    "yellow": (180, -130),
+    "orange": (180, -80),
+    "pink":   (180,  50),
+}
+
+bot2_dropoff_locations = {
+    "white":   (-200, -25),
+    "purple":  (-200, -170),
+    "cyan":    (-200,  90),
+    "brown":   (-200, -130),
+    "gray":    (-200, -80),
+    "black":   (-200,  50),
+}
+
 
 class Robot(serial.Serial):
     """Base class for all robots."""

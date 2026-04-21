@@ -21,6 +21,9 @@ import threading
 class RobotGUI:
     def __init__(self, root, data_queue: queue.Queue):
         self.root = root
+
+        self.root.bind("<Escape>", self.key_handler)
+
         self.data_queue = data_queue
         self.current_frame = None
 
@@ -32,18 +35,22 @@ class RobotGUI:
         self.poll_queue()
         self.update_video_frame()
 
+    def key_handler(self, event):
+        self.data_queue.put("quit")
+
     def _build_layout(self):
         # ── Left: camera feed ────────────────────────────────────────────────
-        left = tk.Frame(self.root, bg="#1e1e1e")
-        left.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.BOTH, expand=True)
+        left = tk.Frame(self.root, bg="#1e1e1e", width=660)  # ← add fixed width
+        left.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.Y)  # ← fill=tk.Y not BOTH
+        left.pack_propagate(False)  # ← add this, prevents children from resizing it
 
         tk.Label(left, text="Camera Feed", bg="#1e1e1e", fg="#aaaaaa",
-                 font=("Helvetica", 10)).pack(anchor="w")
+             font=("Helvetica", 10)).pack(anchor="w")
 
         self.video_label = tk.Label(left, bg="black", width=640, height=400)
-        self.video_label.pack(fill=tk.BOTH, expand=True)
+        self.video_label.pack()
 
-        # ── Right: info panels ───────────────────────────────────────────────
+    # ── Right: info panels ───────────────────────────────────────────────
         right = tk.Frame(self.root, bg="#1e1e1e", width=300)
         right.pack(side=tk.RIGHT, padx=10, pady=10, fill=tk.Y)
         right.pack_propagate(False)
@@ -77,6 +84,8 @@ class RobotGUI:
                                     font=("Courier", 10), state=tk.DISABLED,
                                     relief=tk.FLAT, height=15)
         self.objects_text.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+
+        
 
     # ── Queue polling — runs every 100ms ─────────────────────────────────────
     def poll_queue(self):
