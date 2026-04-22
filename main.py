@@ -77,17 +77,17 @@ while running:
         break
    """ 
 
-   if TESTING:
-       # Feed one row of the test image per loop iteration
-       if test_row < TEST_IMAGE.shape[0]:
-           image = np.roll(image, 1, axis=0)
-           image[0] = TEST_IMAGE[test_row]
-           test_row += 1
-       else:
-           print(f"{__name__}\t[Test] Image fully fed")
-           break  # stop after full image is processed
-   else:
-       # Real camera
+    if TESTING:
+        # Feed one row of the test image per loop iteration
+        if test_row < TEST_IMAGE.shape[0]:
+            image = np.roll(image, 1, axis=0)
+            image[0] = TEST_IMAGE[test_row]
+            test_row += 1
+        else:
+            print(f"{__name__}\t[Test] Image fully fed")
+            break  # stop after full image is processed
+    else:
+        # Real camera
         line, image = update_image(image, cam)
 
     """Få belt speed"""
@@ -113,17 +113,17 @@ while running:
     data_queue.put({"frame":   drawn_bgr})
 
     #tilføjer nye objekter til den globale liste af objekter og printer dem
-   if new_objects:
+    if new_objects:
         for obj in new_objects:
-           color = obj[0]
-           if color in bot1_dropoff_locations:
-               objects_bot1.append(obj)
-               print(f"{__name__}\t[Router] {color} -> bot1")
-           elif color in bot2_dropoff_locations:
-               objects_bot2.append(obj)
-               print(f"{__name__}\t[Router] {color} -> bot2")
-           else:
-               print(f"{__name__}\t[Router] {color} -> unknown, discarding")
+            color = obj[0]
+            if color in bot1_dropoff_locations:
+                objects_bot1.append(obj)
+                print(f"{__name__}\t[Router] {color} -> bot1")
+            elif color in bot2_dropoff_locations:
+                objects_bot2.append(obj)
+                print(f"{__name__}\t[Router] {color} -> bot2")
+            else:
+                print(f"{__name__}\t[Router] {color} -> unknown, discarding")
         #send objects to GUI
         data_queue.put({"bot1 objects": objects_bot1})
         data_queue.put({"bot2 objects": objects_bot2})
