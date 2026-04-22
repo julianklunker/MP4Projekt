@@ -9,7 +9,7 @@ class Converter:
         
         # Calculate the y-intercept (b)
         self.offset = robot_x1 - (self.scale * pixel_x1)
-        print(f"Scale={self.scale:.4f} mm/pixel, Offset={self.offset:.2f} mm")
+        print(f"{__name__}\tScale={self.scale:.4f} mm/pixel, Offset={self.offset:.2f} mm")
 
     def convert_x(self, pixel_x):
         robot_x = (self.scale * pixel_x) + self.offset
@@ -31,5 +31,5 @@ if __name__ == "__main__":
     detected_pixel = 350
     final_robot_x = converter.convert_x(detected_pixel)
     
-    print(f"Cam Pixel {detected_pixel}")
-    print(f"G0 X{final_robot_x:.2f}")
+    print(f"{__name__}\tCam Pixel {detected_pixel}")
+    print(f"{__name__}\tG0 X{final_robot_x:.2f}")

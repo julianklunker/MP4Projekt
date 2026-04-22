@@ -105,12 +105,11 @@ class Maxi(Robot):
 
         """item har (farve, x-koordinat, tid), den eneste jeg har brug for her er farve til sortering"""
         if color not in item_dropoff_locations:
-            print(f"Error: No dropoff location for color '{color}'")
+            print(f"{__name__}\tError: No dropoff location for color '{color}'")
             return
     
         #dropoff_x, dropoff_y = item_dropoff_locations[color]
         dropoff_x, dropoff_y = item_dropoff_locations[color]
-
         self.move(x=x_coord, y=0)  
         self.pump_on()
         self.pause(1)

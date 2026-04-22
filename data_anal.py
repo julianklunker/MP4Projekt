@@ -75,7 +75,7 @@ def find_contours(hsv_image, mask, color_name, draw_color):
             #print(f"{color_name} object at: ({cx}, {cy})")
 
             if y == 1:
-                print(f"{color_name} object at: ({cx}, {cy})")
+                print(f"{__name__}\t{color_name} object at: ({cx}, {cy})")
                 objects.append((color_name,cx,time()))
 
     return hsv_image, objects

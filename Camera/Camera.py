@@ -38,7 +38,7 @@ class Camera(cv2.VideoCapture):
         """
         ret, self.image = super().read()
         if not ret:
-            print("No frame recieved from camera. Trying again...")
+            print(f"{__name__}\tNo frame recieved from camera. Trying again...")
             start_time = time.time()
             timeout = 30  # 30 seconds
 
@@ -47,7 +47,7 @@ class Camera(cv2.VideoCapture):
                 if ret:
                     break
             else:
-                print("Timeout reached. Could not read from camera. Exiting...")
+                print(f"{__name__}\tTimeout reached. Could not read from camera. Exiting...")
                 exit()
         return self.image
 

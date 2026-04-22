@@ -29,7 +29,10 @@ class RobotGUI:
         self.current_frame = None
 
         self.root.title("Robot Control Dashboard")
-        self.root.geometry("1000x600")
+        width = self.root.winfo_screenwidth()
+        height = self.root.winfo_screenheight()
+        #self.root.geometry("1000x600")
+        self.root.geometry(f"{width}x{height}")
         self.root.configure(bg="#1e1e1e")
 
         self._build_layout()
@@ -61,10 +64,10 @@ class RobotGUI:
                                      fg="#aaaaaa", font=("Helvetica", 10))
         robot1_status_frame.pack(fill=tk.X, pady=(0, 10))
 
-        self.robot_item_label = tk.Label(robot1_status_frame, text="Current item: None",
+        self.robot1_item_label = tk.Label(robot1_status_frame, text="Current item: None",
                                          bg="#1e1e1e", fg="white",
                                          font=("Helvetica", 11))
-        self.robot_item_label.pack(pady=8, padx=8, anchor="w")
+        self.robot1_item_label.pack(pady=8, padx=8, anchor="w")
 
         # Robot2
         robot2_status_frame = tk.LabelFrame(right, text="Robot2", bg="#1e1e1e",
@@ -96,41 +99,41 @@ class RobotGUI:
                                     relief=tk.FLAT, height=15)
         self.objects_text.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
-        
-
     # ── Queue polling — runs every 100ms ─────────────────────────────────────
     def poll_queue(self):
         while not self.data_queue.empty():
-            data = self.data_queue.get()
+            try:
+                data = self.data_queue.get()
 
-            if "frame" in data:
-                self.current_frame = data["frame"]
+                if "frame" in data:
+                    self.current_frame = data["frame"]
 
-            if "objects" in data:
-                self._update_objects_list(data["objects"])
+                if "objects" in data:
+                    self._update_objects_list(data["objects"])
 
-            if "bot1 objects" in data:
-                item1 = data["bot1 objects"]
-                if item1:
-                    color, robot_x, t = item1
-                    text = f"Bot1 item: {color}  X={robot_x:.1f}mm"
-                else:
-                    text = "Bot1 item: None"
-                self.robot1_item_label.config(text=text)
+                if "bot1 objects" in data:
+                    item1 = data["bot1 objects"]
+                    if item1:
+                        color, robot_x, t = item1
+                        text = f"Bot1 item: {color}  X={robot_x:.1f}mm"
+                    else:
+                        text = "Bot1 item: None"
+                    self.robot1_item_label.config(text=text)
 
-            if "bot2 objects" in data:
-                item2 = data["bot2 objects"]
-                if item2:
-                    color, robot_x, t = item2
-                    text = f"Bot2 item: {color}  X={robot_x:.1f}mm"
-                else:
-                    text = "Bot2 item: None"
-                self.robot2_item_label.config(text=text)
+                if "bot2 objects" in data:
+                    item2 = data["bot2 objects"]
+                    if item2:
+                        color, robot_x, t = item2
+                        text = f"Bot2 item: {color}  X={robot_x:.1f}mm"
+                    else:
+                        text = "Bot2 item: None"
+                    self.robot2_item_label.config(text=text)
 
-            if "belt_speed" in data:
-                self.belt_speed_label.config(
-                    text=f"Belt speed: {data['belt_speed']:.0f} mm/s")
-
+                if "belt_speed" in data:
+                    self.belt_speed_label.config(
+                        text=f"Belt speed: {data['belt_speed']:.0f} mm/s")
+            except:
+                pass
         self.root.after(100, self.poll_queue)
 
     # ── Video display — runs every 33ms (~30fps) ──────────────────────────────
