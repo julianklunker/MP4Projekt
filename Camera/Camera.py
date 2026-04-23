@@ -72,13 +72,16 @@ class Camera(cv2.VideoCapture):
 class Newteccam(Camera):
     def __init__(self, path='/dev/qtec/video0', API=cv2.CAP_V4L2, *args, **kwargs):
         super().__init__(path, API, *args, **kwargs)
-        self.HEIGHT = 1013
-        self.WIDTH = 1340
-        self.__CROP_TOP = 1096
-        self.__CROP_LEFT = 1117
+        self.HEIGHT = 1032
+        self.WIDTH = 1296
+        self.__CROP_TOP = 12
+        #self.__CROP_TOP = 1096
+        self.__CROP_LEFT = 0
+        #self.__CROP_LEFT = 1117
 
         self.fps = 30
-        self.exposure = 5429
+        self.exposure = 2425
+        #self.exposure = 19174
 
         self.set(cv2.CAP_PROP_FRAME_WIDTH, self.WIDTH)
         self.set(cv2.CAP_PROP_FRAME_HEIGHT, self.HEIGHT)

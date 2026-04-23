@@ -1,10 +1,10 @@
 import serial
 import time
-import threading
-import re
+#import threading
+#import re
 
 #Settings
-z_pickup = 60
+z_pickup = 40
 z_move = 120
 z_drop = 80
 suck_pause_time = 2
@@ -13,34 +13,35 @@ suck_pause_time = 2
 item_dropoff_locations = {
     "red":    (180, -170),
     "blue":   (180, -25),
-    "green":  (180,  90),
-    "yellow": (-200, -170),
-    "orange": (-200, -25),
-    "pink":   (-200,  90),
-    "white":   (180, -130),
-    "purple":  (180, 10),
-    "cyan":    (180,  105),
-    "brown":   (-200, -130),
-    "gray":    (-200, 10),
-    "black":   (-200,  105),
+    #"green":  (180,  90),
+    #"yellow": (-200, -170),
+    #"orange": (-200, -25),
+    #"pink":   (-200,  90),
+    #"white":   (180, -130),
+    #"purple":  (180, 10),
+    #"cyan":    (180,  105),
+    #"brown":   (-200, -130),
+    #"gray":    (-200, 10),
+    #"black":   (-200,  105),
 }
 
 bot1_dropoff_locations = {
-    "red":    (180, -170),
+    #"red":    (180, -170),
     "blue":   (180, -25),
-    "green":  (180,  90),
-    "yellow": (-200, -170),
-    "orange": (-200, -25),
-    "pink":   (-200,  90),
+    #"green":  (180,  90),
+    #"yellow": (-200, -170),
+    #"orange": (-200, -25),
+    #"pink":   (-200,  90),
 }
 
 bot2_dropoff_locations = {
-    "white":   (180, -130),
-    "purple":  (180, 10),
-    "cyan":    (180,  105),
-    "brown":   (-200, -130),
-    "gray":    (-200, 10),
-    "black":   (-200,  105),
+    "red":    (180, -170),
+    #"white":   (180, -130),
+    #"purple":  (180, 10),
+    #"cyan":    (180,  105),
+    #"brown":   (-200, -130),
+    #"gray":    (-200, 10),
+    #"black":   (-200,  105),
 }
 
 
@@ -98,10 +99,11 @@ class Maxi(Robot):
         self.z_offset = -825
         self.timenext = 0
 
+        self.objects = []
+
     def pickcycle(self, item):
         color, x_coord, item_time = item  # unpack the tuple
         ###Tilføj time next
-        self.timenext = time.time() + 1
 
         """item har (farve, x-koordinat, tid), den eneste jeg har brug for her er farve til sortering"""
         if color not in item_dropoff_locations:
@@ -111,6 +113,10 @@ class Maxi(Robot):
         #dropoff_x, dropoff_y = item_dropoff_locations[color]
         dropoff_x, dropoff_y = item_dropoff_locations[color]
         self.move(x=x_coord, y=0)  
+        wait_time = item_time - time.time()
+        self.timenext = time.time() + wait_time + 1
+        print(f"{__name__}\tRobot is waiting {wait_time*1000 -20}")
+        self.pause(wait_time * 1000 - 20)
         self.pump_on()
         self.pause(1)
         self.move(z=z_pickup)

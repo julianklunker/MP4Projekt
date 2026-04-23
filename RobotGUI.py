@@ -20,10 +20,11 @@ import threading
 
 
 class RobotGUI:
-    def __init__(self, root, data_queue: queue.Queue):
+    def __init__(self, root, data_queue: queue.Queue, return_queue: queue.Queue):
         self.root = root
 
         self.root.bind("<Escape>", self.key_handler)
+        self.root.bind("<space>", self.key_handler)
 
         self.data_queue = data_queue
         self.current_frame = None
@@ -40,7 +41,12 @@ class RobotGUI:
         self.update_video_frame()
 
     def key_handler(self, event):
-        self.data_queue.put("quit")
+        self.root.configure(bg="#ff0000")
+        if event.keycode == 9:
+            self.return_queue.put("quit")
+            self.root.configure(bg="#ffffff")
+        elif event.char == "space":
+            self.return_queue.put("shift")
 
     def _build_layout(self):
         # ── Left: camera feed ────────────────────────────────────────────────
@@ -153,20 +159,20 @@ class RobotGUI:
     # ── Helpers ───────────────────────────────────────────────────────────────
     def _update_objects_list(self, objects):
         self.objects_text.config(state=tk.NORMAL)
-        self.objects_text.delete("1.0", tk.END)
+        #self.objects_text.delete("1.0", tk.END)
         if objects:
             for color, x, t in objects:
-                self.objects_text.insert(tk.END, f"{color:8s} x={x:.0f}px\n")
+                self.objects_text.insert("1.0", f"{color:8s} x={x:.0f}px\n")
         else:
             self.objects_text.insert(tk.END, "No objects detected")
         self.objects_text.config(state=tk.DISABLED)
 
 
-def start_gui(data_queue: queue.Queue):
+def start_gui(data_queue: queue.Queue, return_queue: queue.Queue):
     """Call this from your main script to launch the GUI on its own thread."""
     def run():
         root = tk.Tk()
-        app = RobotGUI(root, data_queue)
+        app = RobotGUI(root, data_queue, return_queue)
         root.mainloop()
 
     thread = threading.Thread(target=run, daemon=True)

@@ -16,12 +16,11 @@ class Converter:
         return robot_x
     
     def y_timing(self, belt_speed):
-        bot1_distance = 675
-        bot2_distance = 1335
+        bot1_distance = 456
+        bot2_distance = 988
         bot1_time_s = bot1_distance / belt_speed
         bot2_time_s = bot2_distance / belt_speed
         return bot1_time_s, bot2_time_s
-        
 
 if __name__ == "__main__":
     converter = Converter()
