@@ -1,14 +1,16 @@
 import time
-import tkinter as tk
+import cv2
 import queue
+import numpy as np
+import tkinter as tk
+ 
+from robot.robotclasses import Maxi
+from RobotGUI import start_gui
+from data_anal import convert_to_hsv, find_objects, search_colors, find_contours
 from Camera.image_gen import update_image, update_cube
 from Camera.Camera import Newteccam
 from Converter import Converter
-import cv2
-import numpy as np
-from robot.robotclasses import Maxi, bot1_dropoff_locations, bot2_dropoff_locations
-from RobotGUI import start_gui
-from data_anal import convert_to_hsv, find_objects, search_colors, find_contours
+from items import items
 
  
 
@@ -20,18 +22,23 @@ except:
         def __init__(self):
             self.HEIGHT = 1013
             self.WIDTH = 1296
+
+        def read(self):
+            return np.zeros((self.HEIGHT,self.WIDTH,3),dtype=np.uint8) 
+
     cam = Fake_cam()
     print(f"{__name__}\tFailed to connect to camera")
 
 bots = {}
 
+
 try:
-    bots.update({"bot1": Maxi("/dev/ttyACM0")})
+    bots.update({"bot1": Maxi("/dev/ttyACM0",list(items)[:int(len(items)/2)])})
 except:
     print(f"{__name__}\tFailed to connect to bot1")
 
 try:
-    bots.update({"bot2": Maxi("/dev/ttyACM1")})
+    bots.update({"bot2": Maxi("/dev/ttyACM1",list(items)[int(len(items)/2):])})
 except:
     print(f"{__name__}\tFailed to connect to bot2")
 
@@ -39,37 +46,14 @@ for bot_name, bot in bots.items():
     bot.set_speed(750)
     bot.move(x=0, y=0, z=200)
 
-"""
-try:
-    bot1 = Maxi("/dev/ttyACM0")
-except:
-    print(f"{__name__}\tFailed to connect to bot1")
-    bot1 = False
-if bot1:
-    print(f"{__name__}\tConnected to bot1")
-    bot1.set_speed(750)
-    bot1.move(x=0, y=0, z=200)
-
-try:
-    bot2 = Maxi("/dev/ttyACM1")
-except:
-    print(f"{__name__}\tFailed to connect to bot2")
-    bot2 = False
-if bot2:
-    print(f"{__name__}\tConnected to bot2")
-    bot2.set_speed(750)
-    bot2.move(x=0, y=0, z=200)
-"""
 
 converter = Converter()
 converter.calibrate(0,90,cam.WIDTH,-90)
 
-motor_freq = 14
-#belt_speed = 185 * motor_freq/50
-belt_speed = 38
+belt_speed = 0
 
 ####Manlger at connect til belt arduino og få tal 
-cube = np.zeros((cam.HEIGHT, cam.WIDTH, cam.HEIGHT), dtype=np.uint8)
+#cube = np.zeros((cam.HEIGHT, cam.WIDTH, cam.HEIGHT), dtype=np.uint8)
 image = np.zeros((cam.HEIGHT, cam.WIDTH,3), dtype=np.uint8)
 
 frame_time = time.time()
@@ -80,8 +64,8 @@ start_gui(data_queue,return_queue)
 data_queue.put({"belt_speed": belt_speed})
 
 running = True
-channel = 500
 
+print(f"{__name__}\tStarting main loop")
 while running:
     while not return_queue.empty():
         msg = return_queue.get()
@@ -128,7 +112,7 @@ while running:
         for obj in new_objects:
             color = obj[0]
             for bot_name, bot in bots.items():
-                if color in bot.dropoff_locs:
+                if color in bot.item_types:
                     bot.objects.append(obj)
                     print(f"{__name__}\t[Router] {color} -> {bot_name}")
                 else:

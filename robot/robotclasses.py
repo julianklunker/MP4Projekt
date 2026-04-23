@@ -2,6 +2,7 @@ import serial
 import time
 #import threading
 #import re
+from items import items
 
 #Settings
 z_pickup = 40
@@ -9,6 +10,7 @@ z_move = 120
 z_drop = 80
 suck_pause_time = 2
 
+"""
 #Drop off locations
 item_dropoff_locations = {
     "red":    (180, -170),
@@ -35,7 +37,6 @@ bot1_dropoff_locations = {
 }
 
 bot2_dropoff_locations = {
-    "red":    (180, -170),
     #"white":   (180, -130),
     #"purple":  (180, 10),
     #"cyan":    (180,  105),
@@ -43,6 +44,7 @@ bot2_dropoff_locations = {
     #"gray":    (-200, 10),
     #"black":   (-200,  105),
 }
+"""
 
 
 class Robot(serial.Serial):
@@ -93,13 +95,14 @@ class Robot(serial.Serial):
         self.write(f"G04 P{t}")
 
 class Maxi(Robot):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, port, item_types, *args, **kwargs):
+        super().__init__(port, *args, **kwargs)
 
         self.z_offset = -825
         self.timenext = 0
 
         self.objects = []
+        self.item_types = item_types
 
     def pickcycle(self, item):
         color, x_coord, item_time = item  # unpack the tuple
@@ -111,7 +114,7 @@ class Maxi(Robot):
             return
     
         #dropoff_x, dropoff_y = item_dropoff_locations[color]
-        dropoff_x, dropoff_y = item_dropoff_locations[color]
+        dropoff_x, dropoff_y = items[color]["dropoff_loc"]
         self.move(x=x_coord, y=0)  
         wait_time = item_time - time.time()
         self.timenext = time.time() + wait_time + 1
