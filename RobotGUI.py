@@ -12,10 +12,10 @@ Data the queue accepts:
 """
 
 import tkinter as tk
-from turtle import right
 from PIL import Image, ImageTk
 import cv2
 import queue
+import time
 import threading
 
 
@@ -27,7 +27,10 @@ class RobotGUI:
         self.root.bind("<space>", self.key_handler)
 
         self.data_queue = data_queue
+        self.return_queue = return_queue
+
         self.current_frame = None
+        self.last_frame_time = time.time()
 
         self.root.title("Robot Control Dashboard")
         width = self.root.winfo_screenwidth()
@@ -41,11 +44,9 @@ class RobotGUI:
         self.update_video_frame()
 
     def key_handler(self, event):
-        self.root.configure(bg="#ff0000")
         if event.keycode == 9:
             self.return_queue.put("quit")
-            self.root.configure(bg="#ffffff")
-        elif event.char == "space":
+        elif event.keysym_num == 32:
             self.return_queue.put("shift")
 
     def _build_layout(self):
@@ -95,6 +96,16 @@ class RobotGUI:
                                          font=("Helvetica", 11))
         self.belt_speed_label.pack(pady=8, padx=8, anchor="w")
 
+        # Info
+        info_frame = tk.LabelFrame(right, text="Info", bg="#1e1e1e",
+                                   fg="#aaaaaa", font=("Helvetica", 10))
+        info_frame.pack(fill=tk.X, pady=(0, 10))
+
+        self.info_label = tk.Label(info_frame, text="FPS: ",
+                                         bg="#1e1e1e", fg="white",
+                                         font=("Helvetica", 11))
+        self.info_label.pack(pady=8, padx=8, anchor="w")
+
         # Detected objects list
         obj_frame = tk.LabelFrame(right, text="Detected Objects", bg="#1e1e1e",
                                   fg="#aaaaaa", font=("Helvetica", 10))
@@ -108,38 +119,39 @@ class RobotGUI:
     # ── Queue polling — runs every 100ms ─────────────────────────────────────
     def poll_queue(self):
         while not self.data_queue.empty():
-            try:
-                data = self.data_queue.get()
+            data = self.data_queue.get()
 
-                if "frame" in data:
-                    self.current_frame = data["frame"]
+            if "frame" in data:
+                self.current_frame = data["frame"]
+                frame_time = data["time"]
+                fps = round(1/(frame_time-self.last_frame_time))
+                self.last_frame_time = frame_time
+                self.info_label.config(text=f"FPS: {fps}")
 
-                if "objects" in data:
-                    self._update_objects_list(data["objects"])
+            if "objects" in data:
+                self._update_objects_list(data["objects"])
 
-                if "bot1 objects" in data:
-                    item1 = data["bot1 objects"]
-                    if item1:
-                        color, robot_x, t = item1
-                        text = f"Bot1 item: {color}  X={robot_x:.1f}mm"
-                    else:
-                        text = "Bot1 item: None"
-                    self.robot1_item_label.config(text=text)
+            if "bot1 item" in data:
+                item1 = data["bot1 item"]
+                if item1:
+                    color, robot_x, t = item1
+                    text = f"Bot1 item: {color}  X={robot_x:.1f}mm"
+                else:
+                    text = "Bot1 item: None"
+                self.robot1_item_label.config(text=text)
 
-                if "bot2 objects" in data:
-                    item2 = data["bot2 objects"]
-                    if item2:
-                        color, robot_x, t = item2
-                        text = f"Bot2 item: {color}  X={robot_x:.1f}mm"
-                    else:
-                        text = "Bot2 item: None"
-                    self.robot2_item_label.config(text=text)
+            if "bot2 item" in data:
+                item2 = data["bot2 item"]
+                if item2:
+                    color, robot_x, t = item2
+                    new_text = f"Bot2 item: {color}  X={robot_x:.1f}mm"
+                else:
+                    new_text = "Bot2 item: None"
+                self.robot2_item_label.config(text=new_text)
 
-                if "belt_speed" in data:
-                    self.belt_speed_label.config(
-                        text=f"Belt speed: {data['belt_speed']:.0f} mm/s")
-            except:
-                pass
+            if "belt_speed" in data:
+                self.belt_speed_label.config(
+                    text=f"Belt speed: {data['belt_speed']:.0f} mm/s")
         self.root.after(100, self.poll_queue)
 
     # ── Video display — runs every 33ms (~30fps) ──────────────────────────────
@@ -154,7 +166,7 @@ class RobotGUI:
             self.video_label.imgtk = imgtk  # prevent garbage collection
             self.video_label.config(image=imgtk)
 
-        self.root.after(33, self.update_video_frame)
+        self.root.after(10, self.update_video_frame)
 
     # ── Helpers ───────────────────────────────────────────────────────────────
     def _update_objects_list(self, objects):

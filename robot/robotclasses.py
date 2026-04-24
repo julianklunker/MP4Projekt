@@ -109,12 +109,12 @@ class Maxi(Robot):
         ###Tilføj time next
 
         """item har (farve, x-koordinat, tid), den eneste jeg har brug for her er farve til sortering"""
-        if color not in item_dropoff_locations:
+        if color not in self.item_types:
             print(f"{__name__}\tError: No dropoff location for color '{color}'")
             return
     
         #dropoff_x, dropoff_y = item_dropoff_locations[color]
-        dropoff_x, dropoff_y = items[color]["dropoff_loc"]
+        dropoff_x, dropoff_y = items[color]["drop_loc"]
         self.move(x=x_coord, y=0)  
         wait_time = item_time - time.time()
         self.timenext = time.time() + wait_time + 1

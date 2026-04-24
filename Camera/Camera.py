@@ -1,5 +1,6 @@
 import cv2
 import os
+import queue
 import numpy as np
 #from sortingsystem.settings import config
 #from Models.KMeans_model.Color_detection import Color_detection
@@ -13,6 +14,7 @@ import numpy as np
 #from Object.Object import Object
 import time 
 import threading
+from Camera.image_gen import update_image
 #import json
 
 #from sortingsystem.settings import config
@@ -72,14 +74,16 @@ class Camera(cv2.VideoCapture):
 class Newteccam(Camera):
     def __init__(self, path='/dev/qtec/video0', API=cv2.CAP_V4L2, *args, **kwargs):
         super().__init__(path, API, *args, **kwargs)
-        self.HEIGHT = 1032
+        #self.HEIGHT = 1032
+        self.HEIGHT = 892
         self.WIDTH = 1296
-        self.__CROP_TOP = 12
+        self.__CROP_TOP = 148
+        #self.__CROP_TOP = 12
         #self.__CROP_TOP = 1096
         self.__CROP_LEFT = 0
         #self.__CROP_LEFT = 1117
 
-        self.fps = 30
+        self.fps = 200
         self.exposure = 2425
         #self.exposure = 19174
 
@@ -97,3 +101,21 @@ class Newteccam(Camera):
     def process(self, image):
         objects, self.processed_image = self.model.process_image(image)
         return objects
+
+class Fake_cam:
+    def __init__(self):
+        self.HEIGHT = 1013
+        self.WIDTH = 1296
+        self.blank = np.zeros((self.HEIGHT,self.WIDTH,3),dtype=np.uint8)
+        self.frame = 0
+        self.pos = 50
+
+    def read(self):
+        fake_line = self.blank.copy()
+        fake_line[:,self.pos:self.pos+50] = 255
+        self.frame +=1
+        if self.frame % 75 == 0:
+            self.pos += 75
+            if self.pos > self.WIDTH - 75:
+                self.pos = 50
+        return fake_line 

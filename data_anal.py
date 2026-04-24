@@ -1,6 +1,8 @@
 import cv2
-from time import time
-import random
+import queue
+import threading
+from time import time, sleep
+from items import items
 
 color_library = {
     # Bot 1 colors
@@ -22,17 +24,11 @@ color_library = {
 def convert_to_hsv(image):
     return cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-def find_objects(image, hsv_image, greyscale_mode=False):
-    image = image.copy()
-    hsv_image = hsv_image.copy()
+def find_objects(img):
+    image = img.copy()
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    if greyscale_mode:
-        # Use random color assignment for greyscale input
-        mask = find_grey_objects(hsv_image)
-        frame, objects = find_contours_grey(hsv_image, mask)
-    else:
-        # Normal color detection
-        frame, objects = search_colors(image, hsv_image)
+    frame, objects = search_colors(image, hsv_image)
 
     return frame, objects
 
@@ -81,48 +77,16 @@ def find_contours(frame, mask, color_name, draw_color):
 
     return frame, objects
 
-assigned_colors = {}
+def start_data_anal(data_queue: queue.Queue, return_queue: queue.Queue, img):
+    def run():
+        image = img.copy()
 
-def find_grey_objects(hsv_image):
-    """Detect any grey/white/dark blobs — catches greyscale objects."""
-    # Wide mask that catches anything not strongly saturated (greyscale)
-    lower = (0,   0,  30)
-    upper = (180, 50, 255)
-    mask = cv2.inRange(hsv_image, lower, upper)
-    mask = cv2.dilate(mask, None, iterations=1)
-    return mask
+        frame, new_objects = find_objects(image)
+        if new_objects:
+            data_queue.put({"frame": frame,
+                            "time": time()})
+            return_queue.put(new_objects)
 
-def assign_random_color(cx):
-    """Assign a random color from the library to an object, remembering it by x position."""
-    if cx not in assigned_colors:
-        assigned_colors[cx] = random.choice(list(color_library.keys()))
-    return assigned_colors[cx]
-
-def find_contours_grey(hsv_image, mask):
-    """Like find_contours but assigns a random color to each detected object."""
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    objects = []
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area > 800:
-            x, y, w, h = cv2.boundingRect(cnt)
-            cx = x + w // 2
-            cy = y + h // 2
-
-            # Assign a random color to this object
-            color_name = assign_random_color(cx)
-            _, _, draw_color = color_library[color_name]
-
-            # Draw box and label
-            cv2.rectangle(hsv_image, (x, y), (x + w, y + h), draw_color, 2)
-            cv2.putText(hsv_image, color_name, (x, y - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, draw_color, 2)
-            cv2.circle(hsv_image, (cx, cy), 5, draw_color, -1)
-
-            if y == 1:
-                print(f"{color_name} object at: ({cx}, {cy})")
-                objects.append((color_name, cx, time()))
-                # Clean up memory once object is fully detected
-                assigned_colors.pop(cx, None)
-
-    return hsv_image, objects
+    thread = threading.Thread(target=run, daemon=False)
+    thread.start()
+    return thread

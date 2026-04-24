@@ -2,11 +2,6 @@ import cv2
 import numpy as np
 from time import time
 
-from Camera.Camera import Newteccam
-from robot.robotclasses import Maxi
-from Converter import Converter
-
-
 def update_cube(cube, cam):
     print(f"{__name__}:{time()}\tReading")
     line = cam.read()
@@ -17,15 +12,15 @@ def update_cube(cube, cam):
     print(f"{__name__}:{time()}\tReturning")
     return line, cube
 
-def update_image(image, cam):
+def update_image(image, cam, channel):
     line = cam.read()
     line = line[:,:,0]
     image = np.roll(image,1,axis=0)
     #image[0,:,0] =line.transpose()[:,500]
     #print(image.shape)
 
-    image[0,:505,0] = line.transpose()[:505,500]
-    image[0,505:,2] = line.transpose()[505:,500]
+    image[0,:505,0] = line.transpose()[:505,channel]
+    image[0,505:,2] = line.transpose()[505:,channel]
     
     """
     image[0,:,0] =line.transpose()[:,400]
