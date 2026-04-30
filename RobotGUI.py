@@ -17,7 +17,7 @@ import cv2
 import queue
 import time
 import threading
-
+import numpy as np
 
 class RobotGUI:
     def __init__(self, root, data_queue: queue.Queue, return_queue: queue.Queue):
@@ -157,18 +157,57 @@ class RobotGUI:
     def update_video_frame(self):
         if self.current_frame is not None:
             frame = self.current_frame
-            # Resize to fit the label area
+ 
+            # Convert to RGB for Tkinter regardless of source channel count
+            if frame.ndim == 2:
+                # Raw single-channel index image — map values 0-9 to distinct colours
+                frame = self._colorise_index_image(frame)
+            elif frame.shape[2] == 3:
+                # Already BGR annotated frame from find_materials — just convert
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+ 
             frame = cv2.resize(frame, (1330, 600))
-            #frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
-            img = Image.fromarray(frame_rgb)
+            img = Image.fromarray(frame)
             imgtk = ImageTk.PhotoImage(image=img)
-            self.video_label.imgtk = imgtk  # prevent garbage collection
+            self.video_label.imgtk = imgtk          # prevent garbage collection
             self.video_label.config(image=imgtk)
-
+ 
         self.root.after(10, self.update_video_frame)
 
     # ── Helpers ───────────────────────────────────────────────────────────────
+    @staticmethod
+    def _colorise_index_image(img: np.ndarray) -> np.ndarray:
+        """
+        Convert a single-channel H×W image with pixel values 0-9
+        into an H×W×3 RGB image using distinct per-material colours.
+        """
+        # BGR lookup table (index 0-9)
+        lut_bgr = np.array([
+            [128, 128, 128],   # 0 empty
+            [  0,   0, 255],   # 1 red
+            [255,   0,   0],   # 2 blue
+            [  0, 255,   0],   # 3 green
+            [  0, 255, 255],   # 4 yellow
+            [  0, 165, 255],   # 5 orange
+            [203, 192, 255],   # 6 pink
+            [255, 255, 255],   # 7 white
+            [128,   0, 128],   # 8 purple
+            [255, 255,   0],   # 9 cyan
+        ], dtype=np.uint8)
+ 
+        clipped = np.clip(img, 0, 9)
+        bgr = lut_bgr[clipped]
+        return cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+ 
+    def _update_objects_list(self, objects):
+        self.objects_text.config(state=tk.NORMAL)
+        if objects:
+            for name, x, t in objects:
+                self.objects_text.insert("1.0", f"{name:8s} x={x:.0f}px\n")
+        else:
+            self.objects_text.insert(tk.END, "No objects detected")
+        self.objects_text.config(state=tk.DISABLED)
+
     def _update_objects_list(self, objects):
         self.objects_text.config(state=tk.NORMAL)
         #self.objects_text.delete("1.0", tk.END)

@@ -111,6 +111,7 @@ while running:
     #Update image
     #line, image = update_image(image, cam)
     image = update_image_9(image, cam)
+
     current_time = time.time()
     fps = round(1 / (current_time - time_)) if (current_time - time_) > 0 else 0
     time_ = current_time
@@ -118,10 +119,10 @@ while running:
 
     #objecter (farve, x-koordinat, tid)
     #frame, new_objects = find_objects(image)
-    new_objects = find_materials(image)
-
+    frame, new_objects = find_materials(image)
+    
     #send frame til gui
-    data_queue.put({"frame": image})
+    data_queue.put({"frame": frame})
 
     #tilføjer nye objekter til den globale liste af objekter og printer dem
     if new_objects:
