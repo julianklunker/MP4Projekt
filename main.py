@@ -125,19 +125,11 @@ while running:
 
     #objecter (farve, x-koordinat, tid)
     #frame, new_objects = find_objects(image)
-<<<<<<< HEAD
-
     new_objects = find_materials(image)
 
     #send frame til gui
     data_queue.put({"frame": image})
     #data_queue.put({"frame": frame})
-=======
-    frame, new_objects = find_materials(image)
-    
-    #send frame til gui
-    data_queue.put({"frame": frame})
->>>>>>> 8f1906a791d87c831d555a9ff6ae62cec5c2645b
 
     #tilføjer nye objekter til den globale liste af objekter og printer dem
     if new_objects:
