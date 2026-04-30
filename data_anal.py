@@ -62,16 +62,25 @@ def find_contours(frame, mask, color_name, draw_color):
 
     return frame, objects
 
-def start_data_anal(data_queue: queue.Queue, return_queue: queue.Queue, img):
-    def run():
-        image = img.copy()
+masks_index = [i for i in range(8)]
+def find_materials(img):
+    masks = []
+    for mask_i in masks_index:
+        mask = image[img == mask_i]
 
-        frame, new_objects = find_objects(image)
-        if new_objects:
-            data_queue.put({"frame": frame,
-                            "time": time()})
-            return_queue.put(new_objects)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        objects = []
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area > 800: # Only track objects larger than 800 pixels
+                x, y, w, h = cv2.boundingRect(cnt)
 
-    thread = threading.Thread(target=run, daemon=False)
-    thread.start()
-    return thread
+                #Find object centre
+                cx = x + w // 2
+                cy = y + h // 2
+
+                if y == 1:
+                    print(f"{__name__}\tMaterial tag: {mask_i} object at: ({cx}, {cy})")
+                    objects.append((mask_1,cx,time()))
+
+    return frame, objects

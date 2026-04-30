@@ -159,7 +159,8 @@ class RobotGUI:
             frame = self.current_frame
             # Resize to fit the label area
             frame = cv2.resize(frame, (1330, 600))
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            #frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
             img = Image.fromarray(frame_rgb)
             imgtk = ImageTk.PhotoImage(image=img)
             self.video_label.imgtk = imgtk  # prevent garbage collection

@@ -9,9 +9,8 @@ import tkinter as tk
 from robot.robotclasses import Maxi
 from robot.encoder import Encoder
 from RobotGUI import start_gui
-#from data_anal import start_data_anal
 from data_anal import convert_to_hsv, find_objects, search_colors, find_contours
-from Camera.image_gen import update_image, update_cube, proc_image 
+from Camera.image_gen import update_image 
 from Camera.Camera import Newteccam, Fake_cam
 from Converter import Converter
 from items import items
@@ -21,7 +20,7 @@ from devices import find_com_ports
 
 #starter cam, robot, converter og laver globalt billede (zeroes)
 os.system(r"quark-ctl config load --file '/home/root/MP4Projekt/AmsterDamConfig.json'")
-with open("/home/root/MP4Projekt/AmsterDamConfig.json") as f:
+with open("/home/root/MP4Projekt/AmsterDamModel/AmsterDamConfig.json") as f:
     settings = json.load(f)
 try:
     cam = Newteccam(settings)
@@ -36,17 +35,19 @@ com_ports = find_com_ports()
 print(com_ports)
 
 try:
-    bots.update({"bot1": Maxi(com_ports[0], list(items)[:int(len(items)/2)], base_distance=577, pickup_ys=[-250, -150, -50, 50, 150, 250])})
+    bots.update({"bot1": Maxi(com_ports["bot1"], list(items)[:int(len(items)/2)], base_distance=577, pickup_ys=[-250, -150, -50, 50, 150, 250])})
 except Exception as err:
     print(f"{__name__}\tFailed to connect to bot1")
     print(f"{__name__}\tError:\n{err}")
 
 try:
-    # bots.update({"bot2": Maxi(com_ports[1], list(items)[int(len(items)/2):], base_distance=988, pickup_ys=[-100, 0, 100])})
-    raise Exception
+    bots.update({"bot2": Maxi(com_ports["bot2"], list(items)[int(len(items)/2):], base_distance=988, pickup_ys=[-100, 0, 100])})
 except Exception as err:
     print(f"{__name__}\tFailed to connect to bot2")
-    print(f"{__name__}\tError:\n{err}")
+    if err:
+        print(f"{__name__}\tError:\n{err}")
+    else:
+        print(f"{__name__}\tNo Error")
 
 for bot_name, bot in bots.items():
     bot.set_speed(3000)
@@ -54,13 +55,13 @@ for bot_name, bot in bots.items():
     bot.move(x=0, y=0, z=50)
 
 try:
-    encoder = Encoder(com_ports[1])
+    encoder = Encoder(com_ports["encoder"])
+    belt_speed = 0
 except Exception as err:
     encoder = False
+    belt_speed = 50
     print(f"{__name__}\tFailed to connect to encoder")
     print(f"{__name__}\tError:\n{err}")
-
-belt_speed = 0
 
 data_queue = queue.Queue()
 return_queue = queue.Queue()
@@ -70,11 +71,10 @@ data_queue.put({"belt_speed": belt_speed})
 converter = Converter()
 converter.calibrate(0,125,cam.WIDTH,-105)
 
-#cube = np.zeros((cam.HEIGHT, cam.WIDTH, cam.HEIGHT), dtype=np.uint8)
-image = np.zeros((cam.HEIGHT, cam.WIDTH,3), dtype=np.uint8)
+#image = np.zeros((cam.HEIGHT, cam.WIDTH,3), dtype=np.uint8)
+image = np.zeros((cam.HEIGHT, cam.WIDTH), dtype=np.uint8)
 
 running = True
-channel = 500
 time_ = time.time()
 
 if encoder:
@@ -101,48 +101,27 @@ while running:
     if not running:
         break
 
+    #Få belt speed
     if encoder:
         if time.time() > encoder.last_update + encoder.encoder_update_interval:
             encoder.get_speed()
             belt_speed = encoder.speed
             data_queue.put({"belt_speed": belt_speed})
 
-
     #Update image
-    #line, cube = update_cube(cube, cam)
-   # while time.time()-time_ < 0.01:
-   #     time.sleep(0.005)
-    #image = proc_image(cube)
-    line, image = update_image(image, cam, channel)
-    #cube[i,:,:] = line
-    #print(i)
-    #i +=1
-    #if i >= cube.shape[0]:
-    #    np.save("test_cube.npy",cube)
-    #    break
-    #start_data_anal(data_queue,return_queue,image)
-    fps = round(1 / (time.time() - time_)) if (time.time() - time_) > 0 else 0
-    time_ = time.time()
+    #line, image = update_image(image, cam)
+    image = update_image_9(image, cam)
+    current_time = time.time()
+    fps = round(1 / (current_time - time_)) if (current_time - time_) > 0 else 0
+    time_ = current_time
     data_queue.put({"fps": fps})
-    #image[:,:,0] = cube[:,:,channel]
 
-    #Få belt speed
-
-    #indputter zeroes og tilføjer en linje (kanal 500) til image og opdatere image konstant
-    #line forbliver ændret 
-    #line er hyperspektralt
-    #image er kun fra en kanal
-
-    #konvertere image til hsv  
-    #hsv_image = convert_to_hsv(image)
-
-    #tager hsv_image, kører den igennem den kæde af funktioner i data_anal
-    #Den tegner på hsv_image og returnere det sammen med en liste af objekter
     #objecter (farve, x-koordinat, tid)
-    frame, new_objects = find_objects(image)
-    #frame = image.copy()
+    #frame, new_objects = find_objects(image)
+    new_objects = find_materials(image)
+
     #send frame til gui
-    data_queue.put({"frame":   frame})
+    data_queue.put({"frame": image})
 
     #tilføjer nye objekter til den globale liste af objekter og printer dem
     if new_objects:

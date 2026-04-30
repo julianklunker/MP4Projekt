@@ -19,56 +19,41 @@ label_to_color = {1:(0,0,0), # Background
                   8:(255,255,255), #PS
                   0:(128,128,128)} #ABS
 
-def update_cube(cube, cam):
-    line = cam.read()
-    line = line[:,:,0]
-    line = np.flip(line,axis=0).astype(np.uint8)
-    cube = np.roll(cube,1,axis=0)
-    cube[0,:,:] = line.transpose()
-    return line, cube
+blank = np
 
-def update_image(image, cam, channel):
+def update_image(image, cam):
     line = cam.read() #(Channels, Pixels, 3)
     line = line[:,:,0].transpose() #(Pixels, Channels)
     #line = np.flip(line,axis=0).astype(np.uint8)
 
     line_white = line / whiteMatrix * 255
-    # line_white = line
 
     line_pca = np.dot(line_white - pca_mean, pca_components.T)
     predictions = np.dot(line_pca, svm_model_coef.T) + svm_model_intercept
     encoded_predictions = np.argmax(predictions, axis=1)
-    # colored_line = np.zeros((encoded_predictions.shape[0],3), dtype=np.uint8)
-    # colored_line[:,0] = encoded_predictions.astype(np.uint8)
 
     colored_line = np.zeros((encoded_predictions.shape[0], 3), dtype=np.uint8)
 
     for label, color in label_to_color.items():
         colored_line[encoded_predictions == label] = color
-        #print(colored_line[:,0])
 
     image = np.roll(image,1,axis=0)
     image[0,:,:] = colored_line
-    #image[0,:,0] = encoded_predictions * 30
-    #print(image.shape)
 
     return (line, image)
 
-def proc_image(new_image):
-    calibrated_image = np.zeros(new_image.shape, dtype=np.uint8)
-    for i in range(calibrated_image.shape[0]):
-        calibrated_image[i] = new_image[i] / whiteMatrix * 255
-    new_image = calibrated_image
+def update_image_9(image, cam):
+    line = cam.read() #(Channels, Pixels, 3)
+    line = line[:,:,0].transpose() #(Pixels, Channels)
+    #line = np.flip(line,axis=0).astype(np.uint8)
 
-    n_lines, n_pixels, n_channels = new_image.shape
-    new_image = new_image.reshape(-1,n_channels)
-    new_image_pca = np.dot(new_image - pca_mean, pca_components.T)
-    predictions = np.dot(new_image_pca, svm_model_coef.T) + svm_model_intercept
+    line_white = line / whiteMatrix * 255
+
+    line_pca = np.dot(line_white - pca_mean, pca_components.T)
+    predictions = np.dot(line_pca, svm_model_coef.T) + svm_model_intercept
     encoded_predictions = np.argmax(predictions, axis=1)
-    
-    encoded_predictions = encoded_predictions.reshape(n_lines,n_pixels)
-    image = np.ndarray((n_lines,n_pixels,3), dtype=np.uint8)
-    image[:,:,0] = encoded_predictions * 30
-    print(image.shape)
+
+    image = np.roll(image,1,axis=0)
+    image[0,:] = encoded_predictions
 
     return image

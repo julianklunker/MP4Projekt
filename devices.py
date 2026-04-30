@@ -13,10 +13,10 @@ def find_com_ports():
     for port in list_ports.comports():
         print(f"  {port.device}: {port.description}, sn={port.serial_number}, vid={port.vid}, pid={port.pid}")
 
-    com_ports = []
+    com_ports = {}
     for dev, ser in devices.items():
         ports = grep(ser)
         for port in ports:
-            com_ports.append(port.device)
+            com_ports.update({dev:port.device})
             print(f"Port for {dev} is: {port.device}")
-    return tuple(com_ports)
+    return com_ports

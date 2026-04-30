@@ -2,20 +2,8 @@ import cv2
 import os
 import queue
 import numpy as np
-#from sortingsystem.settings import config
-#from Models.KMeans_model.Color_detection import Color_detection
-#from Models.Thresholdmodel.thresholdmodel import ThresholdModel
-#from Models.Flensburgmodel.Flensburgmodel import Flensburgmodel
-#from Models.Hamburgmodel.Hamburgmodel import Hamburgmodel
-#from Models.Frankfurtmodel.Frankfurtmodel import Frankfurtmodel
-#from Models.Dortmundmodel.Dortmundmodel import Dortmundmodel
-#from Models.Dusseldorfmodel.Dusseldorfmodel import Dusseldorfmodel
-#from Models.Kolnmodel.Kolnmodel import Kolnmodel
-#from Object.Object import Object
 import time 
 import threading
-from Camera.image_gen import update_image
-import json
 
 #from sortingsystem.settings import config
 
@@ -95,34 +83,19 @@ class Newteccam(Camera):
     _auto_start_thread = False  # thread starts after camera properties are set
 
     def __init__(self, settings, path='/dev/qtec/video0', API=cv2.CAP_V4L2, *args, **kwargs):
-        #self.HEIGHT = 1032
-        #self.HEIGHT = 892
-        #self.WIDTH = 1296
-        #self.__CROP_TOP = 148
-        #self.__CROP_TOP = 12
-        #self.__CROP_TOP = 1096
-        #self.__CROP_LEFT = 0
-        #self.__CROP_LEFT = 1117
-        
-        
         self.WIDTH = settings["crops"][0][2] #n_pixels
         self.HEIGHT = settings["crops"][0][3] #n_channels
         self.fps = settings["framerate"]
         self.exposure = settings["controls"]["exposure_time_absolute"]["value"]
 
         super().__init__(path, API, *args, **kwargs)
-        #self.fps = 200
-        #self.exposure = 2425
-        #self.exposure = 19174
-
+        
         self.set(cv2.CAP_PROP_FRAME_WIDTH, self.WIDTH)
         self.set(cv2.CAP_PROP_FRAME_HEIGHT, self.HEIGHT)
         self.set(cv2.CAP_PROP_FPS, self.fps)
         self.set(cv2.CAP_PROP_EXPOSURE, self.exposure)
 
         self._start_capture_thread()  # start only after all properties are applied
-
-        #os.system(f"v4l2-ctl -d {path} --set-crop top={self.__CROP_TOP},left={self.__CROP_LEFT},width={self.WIDTH},height={self.HEIGHT}")
 
     def read(self):
         self.image = super().read()
@@ -132,6 +105,7 @@ class Newteccam(Camera):
         objects, self.processed_image = self.model.process_image(image)
         return objects
 
+#For testing
 class Fake_cam:
     def __init__(self):
         self.HEIGHT = 1013
