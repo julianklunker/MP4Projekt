@@ -123,10 +123,6 @@ class RobotGUI:
 
             if "frame" in data:
                 self.current_frame = data["frame"]
-                frame_time = data["time"]
-                fps = round(1/(frame_time-self.last_frame_time))
-                self.last_frame_time = frame_time
-                self.info_label.config(text=f"FPS: {fps}")
 
             if "objects" in data:
                 self._update_objects_list(data["objects"])
@@ -152,6 +148,9 @@ class RobotGUI:
             if "belt_speed" in data:
                 self.belt_speed_label.config(
                     text=f"Belt speed: {data['belt_speed']:.0f} mm/s")
+
+            if "fps" in data:
+                self.info_label.config(text=f"FPS: {data['fps']}")
         self.root.after(100, self.poll_queue)
 
     # ── Video display — runs every 33ms (~30fps) ──────────────────────────────

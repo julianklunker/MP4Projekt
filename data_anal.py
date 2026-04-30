@@ -4,22 +4,7 @@ import threading
 from time import time, sleep
 from items import items
 
-color_library = {
-    # Bot 1 colors
-    "red":    ((0,   100, 100), (8,   255, 255), (0,   0,   255)),
-    "green":  ((40,  100, 70),  (80,  255, 255), (0,   255, 0  )),
-    "blue":   ((94,  80,  40),  (126, 255, 255), (255, 0,   0  )),
-    "yellow": ((20,  80,  100), (40,  255, 255), (0,   255, 255)),
-    "orange": ((10,  150, 130), (20,  255, 255), (0,   165, 255)),
-    "pink":   ((160, 50,  100), (170, 255, 255), (203, 192, 255)),
-    # Bot 2 colors
-    "white":  ((0,   0,   200), (180, 15,  255), (255, 255, 255)),
-    "purple": ((130, 50,  50),  (160, 255, 255), (128, 0,   128)),
-    "cyan":   ((85,  100, 100), (95,  255, 255), (255, 255, 0  )),
-    "brown":  ((10,  100, 40),  (20,  180, 125), (42,  42,  165)),
-    "gray":   ((0,   0,   60),  (180, 25,  180), (128, 128, 128)),
-    #"black":  ((0,   0,   1),   (180, 255, 40),  (50,  50,  50 )),
-}
+color_library = {name: val["data"] for name, val in items.items()}
 
 def convert_to_hsv(image):
     return cv2.cvtColor(image, cv2.COLOR_BGR2HSV)

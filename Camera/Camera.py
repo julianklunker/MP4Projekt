@@ -15,7 +15,7 @@ import numpy as np
 import time 
 import threading
 from Camera.image_gen import update_image
-#import json
+import json
 
 #from sortingsystem.settings import config
 
@@ -25,33 +25,53 @@ class Camera(cv2.VideoCapture):
 
     Inherits from cv2.VideoCapture and overwrites read method.
     """
+    _auto_start_thread = True  # subclasses can set False to defer thread start
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.image = None
         self.processed_image = None
         self.lock = threading.Lock()
-        _, img = super().read()
-        self.height, self.width, *_ = img.shape
+        self._stop_event = threading.Event()
+        self._latest_frame = None
+        self.height = None
+        self.width = None
+        self._capture_thread = None
+        if self._auto_start_thread:
+            self._start_capture_thread()
+
+    def _start_capture_thread(self):
+        # Read first frame here — after any subclass properties have been applied
+        ret, img = cv2.VideoCapture.read(self)
+        if ret:
+            self._latest_frame = img
+            self.height, self.width, *_ = img.shape
+        self._capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
+        self._capture_thread.start()
+
+    def _capture_loop(self):
+        """Background thread: continuously reads frames so the buffer stays drained."""
+        while not self._stop_event.is_set():
+            ret, frame = cv2.VideoCapture.read(self)
+            if ret:
+                with self.lock:
+                    self._latest_frame = frame
 
     def read(self):
         """
-        Overwrite read method.
-        Returns frame
+        Returns the most recently captured frame.
         """
-        ret, self.image = super().read()
-        if not ret:
-            print(f"{__name__}\tNo frame recieved from camera. Trying again...")
-            start_time = time.time()
-            timeout = 30  # 30 seconds
-
-            while time.time() - start_time < timeout:
-                ret, self.image = super().read()
-                if ret:
-                    break
-            else:
-                print(f"{__name__}\tTimeout reached. Could not read from camera. Exiting...")
-                exit()
+        with self.lock:
+            if self._latest_frame is None:
+                return None
+            self.image = self._latest_frame.copy()
         return self.image
+
+    def release(self):
+        self._stop_event.set()
+        if self._capture_thread:
+            self._capture_thread.join(timeout=2)
+        super().release()
 
     def process(self, image):
         """
@@ -72,19 +92,27 @@ class Camera(cv2.VideoCapture):
 
 
 class Newteccam(Camera):
-    def __init__(self, path='/dev/qtec/video0', API=cv2.CAP_V4L2, *args, **kwargs):
-        super().__init__(path, API, *args, **kwargs)
+    _auto_start_thread = False  # thread starts after camera properties are set
+
+    def __init__(self, settings, path='/dev/qtec/video0', API=cv2.CAP_V4L2, *args, **kwargs):
         #self.HEIGHT = 1032
-        self.HEIGHT = 892
-        self.WIDTH = 1296
-        self.__CROP_TOP = 148
+        #self.HEIGHT = 892
+        #self.WIDTH = 1296
+        #self.__CROP_TOP = 148
         #self.__CROP_TOP = 12
         #self.__CROP_TOP = 1096
-        self.__CROP_LEFT = 0
+        #self.__CROP_LEFT = 0
         #self.__CROP_LEFT = 1117
+        
+        
+        self.WIDTH = settings["crops"][0][2] #n_pixels
+        self.HEIGHT = settings["crops"][0][3] #n_channels
+        self.fps = settings["framerate"]
+        self.exposure = settings["controls"]["exposure_time_absolute"]["value"]
 
-        self.fps = 200
-        self.exposure = 2425
+        super().__init__(path, API, *args, **kwargs)
+        #self.fps = 200
+        #self.exposure = 2425
         #self.exposure = 19174
 
         self.set(cv2.CAP_PROP_FRAME_WIDTH, self.WIDTH)
@@ -92,7 +120,9 @@ class Newteccam(Camera):
         self.set(cv2.CAP_PROP_FPS, self.fps)
         self.set(cv2.CAP_PROP_EXPOSURE, self.exposure)
 
-        os.system(f"v4l2-ctl -d {path} --set-crop top={self.__CROP_TOP},left={self.__CROP_LEFT},width={self.WIDTH},height={self.HEIGHT}")
+        self._start_capture_thread()  # start only after all properties are applied
+
+        #os.system(f"v4l2-ctl -d {path} --set-crop top={self.__CROP_TOP},left={self.__CROP_LEFT},width={self.WIDTH},height={self.HEIGHT}")
 
     def read(self):
         self.image = super().read()

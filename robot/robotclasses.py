@@ -5,9 +5,9 @@ import time
 from items import items
 
 #Settings
-z_pickup = 40
-z_move = 120
-z_drop = 80
+z_pickup = 0
+z_move = 50
+z_drop = 50
 suck_pause_time = 2
 
 """
@@ -52,6 +52,7 @@ class Robot(serial.Serial):
     def __init__(self, port, *args, **kwargs):
         super().__init__(port, baudrate=115200, timeout=10, *args, **kwargs)
         self.z_offset = 0
+        self.home()
 
     def write(self, gcode: str):
         super().write(f"{gcode} \n".encode())
@@ -83,6 +84,7 @@ class Robot(serial.Serial):
                     gcode = "M" + "0" + str(value) + " D0"
                 else:
                     gcode = "M" + str(value)
+        print(f"{__name__}\tSending G-code: {gcode}")
         self.write(gcode)
     
     def pump_on(self):
@@ -93,9 +95,14 @@ class Robot(serial.Serial):
 
     def pause(self, t: float):
         self.write(f"G04 P{t}")
+    
+    def home(self):
+        self.write("G28")
 
 class Maxi(Robot):
-    def __init__(self, port, item_types, *args, **kwargs):
+    MIN_LEAD_TIME = 0  # seconds of lead time needed before item arrives
+
+    def __init__(self, port, item_types, base_distance, pickup_ys, *args, **kwargs):
         super().__init__(port, *args, **kwargs)
 
         self.z_offset = -825
@@ -103,22 +110,45 @@ class Maxi(Robot):
 
         self.objects = []
         self.item_types = item_types
+        self.base_distance = base_distance  # mm from camera to robot's y=0
+        self.pickup_ys = sorted(pickup_ys)  # belt y-offsets, sorted closest first
 
-    def pickcycle(self, item):
-        color, x_coord, item_time = item  # unpack the tuple
-        ###Tilføj time next
+    def pickcycle(self, item, belt_speed):
+        color, x_coord, detected_time = item
 
-        """item har (farve, x-koordinat, tid), den eneste jeg har brug for her er farve til sortering"""
+
         if color not in self.item_types:
             print(f"{__name__}\tError: No dropoff location for color '{color}'")
             return
-    
-        #dropoff_x, dropoff_y = item_dropoff_locations[color]
+
+        # Select the first pickup y-position the robot can still reach in time
+        selected_y = None
+        time_at_y = None
+        now = time.time()
+        for y in self.pickup_ys:
+            if belt_speed <= 0:
+                # avoid zero division and just pick the first position if belt isn't moving (whatever...)
+                selected_y = self.pickup_ys[0]
+                time_at_y = now + self.MIN_LEAD_TIME + 1
+                break
+            t = detected_time + (self.base_distance + y) / belt_speed
+            if t > now + self.MIN_LEAD_TIME:
+                selected_y = y
+                time_at_y = t
+                break
+
+        if selected_y is None:
+            print(f"{__name__}\tWARNING: Item '{color}' unreachable at all pickup positions — discarding")
+            return
+
+        print(f"{__name__}\tPickup y={selected_y}mm, arrives in {time_at_y - now:.2f}s")
+
         dropoff_x, dropoff_y = items[color]["drop_loc"]
-        self.move(x=x_coord, y=0)  
-        wait_time = item_time - time.time()
+        print(int(x_coord), int(selected_y), int(z_move))
+        self.move(x=int(x_coord), y=int(selected_y), z=int(z_move))  # move to above the item, ready to pick
+        wait_time = time_at_y - time.time()
         self.timenext = time.time() + wait_time + 1
-        print(f"{__name__}\tRobot is waiting {wait_time*1000 -20}")
+        print(f"{__name__}\tRobot is waiting {wait_time*1000 - 20:.0f}ms")
         self.pause(wait_time * 1000 - 20)
         self.pump_on()
         self.pause(1)
