@@ -17,7 +17,17 @@ import cv2
 import queue
 import time
 import threading
+import numpy as np
 
+label_to_color = {1:(0,0,0), # Background
+                  2:(0,255,0),     #PA
+                  3:(255,0,0),     #PC
+                  4:(0,0,255),     #PE
+                  5:(255,255,0),   #PET
+                  6:(255,0,255),   #PLA
+                  7:(0,255,255),   #PP
+                  8:(255,255,255), #PS
+                  0:(128,128,128)} #ABS
 
 class RobotGUI:
     def __init__(self, root, data_queue: queue.Queue, return_queue: queue.Queue):
@@ -157,10 +167,16 @@ class RobotGUI:
     def update_video_frame(self):
         if self.current_frame is not None:
             frame = self.current_frame
+            height, width, val = frame.shape
+            frame = frame.reshape(-1,width*height)
+            colored_frame = np.ones((frame.shape[0],frame.shape[1],3),dtype=np.uint8)
+            for label, color in label_to_color.items():
+                colored_frame[frame == label] = color
+            colored_frame = colored_frame.reshape(height,width,3)
             # Resize to fit the label area
-            frame = cv2.resize(frame, (1330, 600))
-            #frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+            frame = cv2.resize(colored_frame, (1330, 660))
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            #frame_rgb = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
             img = Image.fromarray(frame_rgb)
             imgtk = ImageTk.PhotoImage(image=img)
             self.video_label.imgtk = imgtk  # prevent garbage collection

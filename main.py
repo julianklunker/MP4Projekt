@@ -4,13 +4,15 @@ import queue
 import os
 import json
 import numpy as np
-import tkinter as tk
  
 from robot.robotclasses import Maxi
-from robot.encoder import Encoder
+# from robot.encoder import Encoder
+from velocitygooner import VelocitySensor
 from RobotGUI import start_gui
-from data_anal import convert_to_hsv, find_objects, search_colors, find_contours
-from Camera.image_gen import update_image 
+#from data_anal import convert_to_hsv, find_objects, search_colors, find_contours
+from data_anal import find_materials
+#from Camera.image_gen import update_image 
+from Camera.image_gen import update_image_9 
 from Camera.Camera import Newteccam, Fake_cam
 from Converter import Converter
 from items import items
@@ -19,10 +21,10 @@ from devices import find_com_ports
  
 
 #starter cam, robot, converter og laver globalt billede (zeroes)
-os.system(r"quark-ctl config load --file '/home/root/MP4Projekt/AmsterDamConfig.json'")
-with open("/home/root/MP4Projekt/AmsterDamModel/AmsterDamConfig.json") as f:
-    settings = json.load(f)
 try:
+    os.system(r"quark-ctl config load --file '/home/root/MP4Projekt/AmsterDamModel/AmsterDamConfig.json'")
+    with open("/home/root/MP4Projekt/AmsterDamModel/AmsterDamConfig.json") as f:
+        settings = json.load(f)
     cam = Newteccam(settings)
     #raise Exception
 except Exception as err:
@@ -54,35 +56,45 @@ for bot_name, bot in bots.items():
     bot.set_acceleration(40000)
     bot.move(x=0, y=0, z=50)
 
+# try:
+#     encoder = Encoder(com_ports["encoder"])
+#     belt_speed = 0
+# except Exception as err:
+#     encoder = False
+#     belt_speed = 50
+#     print(f"{__name__}\tFailed to connect to encoder")
+#     print(f"{__name__}\tError:\n{err}")
+
 try:
-    encoder = Encoder(com_ports["encoder"])
-    belt_speed = 0
+    encoder = VelocitySensor(port = com_ports["encoder"])
+    encoder.start()
 except Exception as err:
     encoder = False
     belt_speed = 50
     print(f"{__name__}\tFailed to connect to encoder")
     print(f"{__name__}\tError:\n{err}")
 
+
 data_queue = queue.Queue()
 return_queue = queue.Queue()
 start_gui(data_queue,return_queue)
-data_queue.put({"belt_speed": belt_speed})
+# data_queue.put({"belt_speed": belt_speed})
 
 converter = Converter()
 converter.calibrate(0,125,cam.WIDTH,-105)
 
 #image = np.zeros((cam.HEIGHT, cam.WIDTH,3), dtype=np.uint8)
-image = np.zeros((cam.HEIGHT, cam.WIDTH), dtype=np.uint8)
+image = np.ones((cam.HEIGHT, cam.WIDTH, 1), dtype=np.uint8)
 
 running = True
 time_ = time.time()
+new_objects = []
 
-if encoder:
-    encoder.last_update = 0  # trigger immediate first read
-print(f"{__name__}\tStarting main loop")
-i = 0
+# if encoder:
+#     encoder.last_update = 0  # trigger immediate first read
+# print(f"{__name__}\tStarting main loop")
+
 while running:
-    new_objects = []
     while not return_queue.empty():
         msg = return_queue.get()
         print(f"{__name__}\t{msg}")
@@ -90,22 +102,16 @@ while running:
             print(f"{__name__}\t[Main] Stopping...")
             running = False
             break
-        elif msg == "shift":
-            channel += 10
-            if channel > cam.HEIGHT:
-                channel = 0
         elif type(msg) == list:
             print(f"{__name__}\t{msg}")
             new_objects += msg
 
-    if not running:
-        break
-
     #Få belt speed
     if encoder:
         if time.time() > encoder.last_update + encoder.encoder_update_interval:
-            encoder.get_speed()
-            belt_speed = encoder.speed
+            current, average = encoder.get_data()
+    #         encoder.get_speed()
+            belt_speed = average
             data_queue.put({"belt_speed": belt_speed})
 
     #Update image
@@ -118,23 +124,25 @@ while running:
 
     #objecter (farve, x-koordinat, tid)
     #frame, new_objects = find_objects(image)
+
     new_objects = find_materials(image)
 
     #send frame til gui
     data_queue.put({"frame": image})
+    #data_queue.put({"frame": frame})
 
     #tilføjer nye objekter til den globale liste af objekter og printer dem
     if new_objects:
         data_queue.put({"objects": new_objects})
         for obj in new_objects:
-            color = obj[0]
+            material = obj[0]
             for bot_name, bot in bots.items():
-                if color in bot.item_types:
+                if material in bot.item_types:
                     bot.objects.append(obj)
-                    print(f"{__name__}\t[Router] {color} -> {bot_name}")
+                    print(f"{__name__}\t[Router] {material} -> {bot_name}")
                     break
                 else:
-                    print(f"{__name__}\t[Router] {color} -> unknown, discarding")
+                    print(f"{__name__}\t[Router] {material} -> unknown, discarding")
 
     # tjekker om robotten er klar, hvis den er klar og der er objekter i køen
     # sender det til robotten
@@ -153,6 +161,9 @@ while running:
                 bot.pickcycle(item, belt_speed)
 
 # End of loop
+print(f"{__name__}\tClosing encoder")
+if encoder:
+    encoder.stop()
 print(f"{__name__}\tClosing bots")
 for bot_name, bot in bots.items():
     bot.home()

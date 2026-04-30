@@ -7,7 +7,7 @@ class Encoder(serial.Serial):
 
         self.write("avg\n".encode("utf-8"))
 
-        self.encoder_update_interval = 5  # seconds
+        self.encoder_update_interval = 30  # seconds
 
         self.speed = 0
         self.last_update = 0

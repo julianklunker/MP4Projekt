@@ -108,15 +108,21 @@ class Newteccam(Camera):
 #For testing
 class Fake_cam:
     def __init__(self):
-        self.HEIGHT = 1013
+        self.HEIGHT = 600
         self.WIDTH = 1296
-        self.blank = np.zeros((self.HEIGHT,self.WIDTH,3),dtype=np.uint8)
+        self.blank = np.ones((self.HEIGHT,self.WIDTH,1),dtype=np.uint8)
         self.frame = 0
         self.pos = 50
+        self.i = 0
 
     def read(self):
         fake_line = self.blank.copy()
-        fake_line[:,self.pos:self.pos+50] = 255
+        fake_line[:,self.pos:self.pos+50] * self.i
+        self.i += 1
+        if self.i == 1:
+            self.i +=1
+        if self.i > 8:
+            self.i = 0
         self.frame +=1
         if self.frame % 75 == 0:
             self.pos += 75

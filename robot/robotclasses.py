@@ -10,43 +10,6 @@ z_move = 50
 z_drop = 50
 suck_pause_time = 2
 
-"""
-#Drop off locations
-item_dropoff_locations = {
-    "red":    (180, -170),
-    "blue":   (180, -25),
-    #"green":  (180,  90),
-    #"yellow": (-200, -170),
-    #"orange": (-200, -25),
-    #"pink":   (-200,  90),
-    #"white":   (180, -130),
-    #"purple":  (180, 10),
-    #"cyan":    (180,  105),
-    #"brown":   (-200, -130),
-    #"gray":    (-200, 10),
-    #"black":   (-200,  105),
-}
-
-bot1_dropoff_locations = {
-    #"red":    (180, -170),
-    "blue":   (180, -25),
-    #"green":  (180,  90),
-    #"yellow": (-200, -170),
-    #"orange": (-200, -25),
-    #"pink":   (-200,  90),
-}
-
-bot2_dropoff_locations = {
-    #"white":   (180, -130),
-    #"purple":  (180, 10),
-    #"cyan":    (180,  105),
-    #"brown":   (-200, -130),
-    #"gray":    (-200, 10),
-    #"black":   (-200,  105),
-}
-"""
-
-
 class Robot(serial.Serial):
     """Base class for all robots."""
     def __init__(self, port, *args, **kwargs):

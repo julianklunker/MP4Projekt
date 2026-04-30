@@ -54,6 +54,6 @@ def update_image_9(image, cam):
     encoded_predictions = np.argmax(predictions, axis=1)
 
     image = np.roll(image,1,axis=0)
-    image[0,:] = encoded_predictions
+    image[0,:,0] = encoded_predictions
 
     return image
