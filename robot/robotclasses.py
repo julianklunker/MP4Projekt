@@ -1,8 +1,6 @@
 import serial
 import time
-#import threading
-#import re
-from items import items
+from items import items, items_
 
 #Settings
 z_pickup = 0
@@ -65,23 +63,24 @@ class Robot(serial.Serial):
 class Maxi(Robot):
     MIN_LEAD_TIME = 0  # seconds of lead time needed before item arrives
 
-    def __init__(self, port, item_types, base_distance, pickup_ys, *args, **kwargs):
+    def __init__(self, port, name, base_distance, pickup_ys, *args, **kwargs):
         super().__init__(port, *args, **kwargs)
 
         self.z_offset = -825
         self.timenext = 0
 
+        self.name = name
         self.objects = []
-        self.item_types = item_types
+        self.item_types = []
         self.base_distance = base_distance  # mm from camera to robot's y=0
         self.pickup_ys = sorted(pickup_ys)  # belt y-offsets, sorted closest first
 
     def pickcycle(self, item, belt_speed):
-        color, x_coord, detected_time = item
+        material, x_coord, detected_time = item
 
 
-        if color not in self.item_types:
-            print(f"{__name__}\tError: No dropoff location for color '{color}'")
+        if material not in self.item_types:
+            print(f"{__name__}\tError: No dropoff location for material '{material}'")
             return
 
         # Select the first pickup y-position the robot can still reach in time
@@ -101,30 +100,37 @@ class Maxi(Robot):
                 break
 
         if selected_y is None:
-            print(f"{__name__}\tWARNING: Item '{color}' unreachable at all pickup positions — discarding")
+            print(f"{__name__}\tWARNING: Item '{material}' unreachable at all pickup positions — discarding")
             return
 
         print(f"{__name__}\tPickup y={selected_y}mm, arrives in {time_at_y - now:.2f}s")
 
-        dropoff_x, dropoff_y = items[color]["drop_loc"]
+        try: 
+            dropoff_x, dropoff_y = items[self.name][material]["drop_loc"]
+        except:
+            dropoff_x, dropoff_y = items_[self.name][material]["drop_loc"]
         print(int(x_coord), int(selected_y), int(z_move))
-        self.move(x=int(x_coord), y=int(selected_y), z=int(z_move))  # move to above the item, ready to pick
-        wait_time = time_at_y - time.time()
-        self.timenext = time.time() + wait_time + 1
-        print(f"{__name__}\tRobot is waiting {wait_time*1000 - 20:.0f}ms")
-        self.pause(wait_time * 1000 - 20)
-        self.pump_on()
-        self.pause(1)
-        self.move(z=z_pickup)
-        self.pause(suck_pause_time)
-        self.move(z=z_move)
+        try:
+            self.move(x=int(x_coord), y=int(selected_y), z=int(z_move))  # move to above the item, ready to pick
+            wait_time = time_at_y - time.time()
+            self.timenext = time.time() + wait_time + 1
+            print(f"{__name__}\tRobot is waiting {wait_time*1000 - 20:.0f}ms")
+            self.pause(wait_time * 1000 - 20)
+            self.pump_on()
+            self.pause(1)
+            self.move(z=z_pickup)
+            self.pause(suck_pause_time)
+            self.move(z=z_move)
 
-        self.move(x=dropoff_x, y=dropoff_y)
-        #self.move(z=z_drop)
+            self.move(x=dropoff_x, y=dropoff_y)
+            #self.move(z=z_drop)
 
-        self.pump_off()
-        self.pause(suck_pause_time)  # Pause so vacuum is released
-        #self.move(z=z_move)
+            self.pump_off()
+            self.pause(suck_pause_time)  # Pause so vacuum is released
+            return True
+        except:
+            print(f"{__name__}\tFailed to send G-code")
+            return False
 
     def update(self):
         if time.time() >= self.timenext:

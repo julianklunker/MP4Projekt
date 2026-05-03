@@ -15,7 +15,7 @@ from data_anal import find_materials
 from Camera.image_gen import update_image_9 
 from Camera.Camera import Newteccam, Fake_cam
 from Converter import Converter
-from items import items
+from items import items, items_
 from devices import find_com_ports
 
  
@@ -36,34 +36,38 @@ bots = {}
 com_ports = find_com_ports()
 print(com_ports)
 
-try:
-    bots.update({"bot1": Maxi(com_ports["bot1"], list(items)[:int(len(items)/2)], base_distance=577, pickup_ys=[-250, -150, -50, 50, 150, 250])})
-except Exception as err:
-    print(f"{__name__}\tFailed to connect to bot1")
-    print(f"{__name__}\tError:\n{err}")
+def start_bot1(bots):
+    try:
+        bots.update({"bot1": Maxi(com_ports["bot1"], "bot1", base_distance=605, pickup_ys=[-250, -150, -50, 50, 150, 250])})
+    except Exception as err:
+        print(f"{__name__}\tFailed to connect to bot1")
+        if err:
+            print(f"{__name__}\tError:\n{err}")
+        else:
+            print(f"{__name__}\tNo Error")
 
-try:
-    bots.update({"bot2": Maxi(com_ports["bot2"], list(items)[int(len(items)/2):], base_distance=988, pickup_ys=[-100, 0, 100])})
-except Exception as err:
-    print(f"{__name__}\tFailed to connect to bot2")
-    if err:
-        print(f"{__name__}\tError:\n{err}")
-    else:
-        print(f"{__name__}\tNo Error")
+def start_bot2(bots):
+    try:
+        bots.update({"bot2": Maxi(com_ports["bot2"], "bot2", base_distance=988, pickup_ys=[-100, 0, 100])})
+    except Exception as err:
+        print(f"{__name__}\tFailed to connect to bot2")
+        if err:
+            print(f"{__name__}\tError:\n{err}")
+        else:
+            print(f"{__name__}\tNo Error")
 
+start_bot1(bots)
+start_bot2(bots)
+
+items = items if len(bots) == 2 else items_
 for bot_name, bot in bots.items():
-    bot.set_speed(3000)
-    bot.set_acceleration(40000)
-    bot.move(x=0, y=0, z=50)
-
-# try:
-#     encoder = Encoder(com_ports["encoder"])
-#     belt_speed = 0
-# except Exception as err:
-#     encoder = False
-#     belt_speed = 50
-#     print(f"{__name__}\tFailed to connect to encoder")
-#     print(f"{__name__}\tError:\n{err}")
+    try:
+        bot.set_speed(3000)
+        bot.set_acceleration(40000)
+        bot.move(x=0, y=0, z=50)
+        bot.item_types = list(items[bot_name])
+    except:
+        print(f"{__name__}\t{bot_name} failed")
 
 try:
     encoder = VelocitySensor(port = com_ports["encoder"])
@@ -78,21 +82,15 @@ except Exception as err:
 data_queue = queue.Queue()
 return_queue = queue.Queue()
 start_gui(data_queue,return_queue)
-# data_queue.put({"belt_speed": belt_speed})
 
 converter = Converter()
 converter.calibrate(0,125,cam.WIDTH,-105)
 
-#image = np.zeros((cam.HEIGHT, cam.WIDTH,3), dtype=np.uint8)
 image = np.ones((cam.HEIGHT, cam.WIDTH, 1), dtype=np.uint8)
 
 running = True
 time_ = time.time()
 new_objects = []
-
-# if encoder:
-#     encoder.last_update = 0  # trigger immediate first read
-# print(f"{__name__}\tStarting main loop")
 
 while running:
     while not return_queue.empty():
@@ -158,16 +156,26 @@ while running:
                 print(f"{__name__}\tItem sent to {bot_name}:\n\t\t{item}")
 
                 data_queue.put({f"{bot_name} item": item})
-                bot.pickcycle(item, belt_speed)
+                if not bot.pickcycle(item, belt_speed):
+                    print(f"{__name__}\tResetting {bot_name}")
+                    if bot_name == "bot1":
+                        start_bot1(bots)
+                    else:
+                        start_bot2(bots)
 
 # End of loop
+print(f"{__name__}\tReleasing camera")
+cam.release()
 print(f"{__name__}\tClosing encoder")
 if encoder:
     encoder.stop()
-print(f"{__name__}\tClosing bots")
 for bot_name, bot in bots.items():
-    bot.home()
-    bot.close()
+    print(f"{__name__}\tClosing {bot_name}")
+    try:
+        bot.home()
+        bot.close()
+    except:
+        pass
     if not bot.is_open:
         print(f"{__name__}\tClosed {bot_name}")
 

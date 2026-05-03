@@ -167,28 +167,17 @@ class RobotGUI:
     def update_video_frame(self):
         if self.current_frame is not None:
             frame = self.current_frame
-            # height, width, val = frame.shape
-            # frame = frame.reshape(-1,width*height)
-            # colored_frame = np.ones((frame.shape[0],frame.shape[1],3),dtype=np.uint8)
-            # for label, color in label_to_color.items():
-            #     colored_frame[frame == label] = color
-            # colored_frame = colored_frame.reshape(height,width,3)
-            # # Resize to fit the label area
-            # frame = cv2.resize(colored_frame, (1330, 660))
-            # frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            # #frame_rgb = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
-            # img = Image.fromarray(frame_rgb)
-
-            # Convert to RGB for Tkinter regardless of source channel count
-            if frame.ndim == 2:
-                # Raw single-channel index image — map values 0-9 to distinct colours
-                frame = self._colorise_index_image(frame)
-            elif frame.shape[2] == 3:
-                # Already BGR annotated frame from find_materials — just convert
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
- 
-            frame = cv2.resize(frame, (1330, 600))
-            img = Image.fromarray(frame)
+            height, width, val = frame.shape
+            frame = frame.reshape(-1,width*height)
+            colored_frame = np.ones((frame.shape[0],frame.shape[1],3),dtype=np.uint8)
+            for label, color in label_to_color.items():
+                colored_frame[frame == label] = color
+            colored_frame = colored_frame.reshape(height,width,3)
+            # Resize to fit the label area
+            frame = cv2.resize(colored_frame, (1330, 660))
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            #frame_rgb = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+            img = Image.fromarray(frame_rgb)
             imgtk = ImageTk.PhotoImage(image=img)
             self.video_label.imgtk = imgtk          # prevent garbage collection
             self.video_label.config(image=imgtk)
